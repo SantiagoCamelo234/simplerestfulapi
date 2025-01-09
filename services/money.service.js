@@ -1,66 +1,57 @@
 const boom = require('@hapi/boom')
-const {faker} = require('@faker-js/faker')
-const moment = require('moment')
+const {models} = require('../libs/sequelize')
 class MoneyService {
 
   constructor(){
-    this.incomes = []
-    this.expenses = []
   }
   async createIncome(data) {
-
-    const newIncome = {
-      id: faker.string.uuid(),
-      date: moment().format('YYYY-MM-DD HH:mm:ss'),
-      ...data,
-    };
-    this.incomes.push(newIncome);
+    const newIncome = await models.Incomes.create(data);
     return newIncome;
   }
   async getIncomes(){
-    return this.incomes
+    const incomes = await models.Incomes.findAll();
+    return incomes
   }
   async getExpenses(){
-    return this.expenses
+    const expenses = await models.Expenses.findAll();
+    return expenses
   }
   async createExpense(data){
-    const newExpense = {
-      id: faker.string.uuid(),
-      date: moment().format('YYYY-MM-DD HH:mm:ss'),
-      ...data,
-    };
-    this.expenses.push(newExpense);
+    const newExpense = await models.Expenses.create(data);
     return newExpense;
   }
 
   async summary(){
 
-    const totalIncomes = ()=> {
+    const totalIncomes = async ()=> {
       let incomesSum = 0;
-      for(const income of this.incomes){
+      const incomes = await this.getIncomes()
+      for(const income of incomes){
         incomesSum += parseInt(income.amount)
       }
       return incomesSum
     }
 
-    const totalExpenses = () => {
+    const totalExpenses = async() => {
+      const expenses = await this.getExpenses()
       let expenseSum = 0
-      for(const expense of this.expenses){
+      for(const expense of expenses){
         expenseSum+= parseInt(expense.amount)
       }
       return expenseSum
     }
 
-    const balance = () => {
-      const balance = totalIncomes() - totalExpenses()
+    const balance = async () => {
+      const balance = await totalIncomes() - await totalExpenses()
       return balance
     }
 
     const newSummary = {
-      incomes: totalIncomes(),
-      expenses: totalExpenses(),
-      balance: balance()
+      incomes: await totalIncomes(),
+      expenses: await totalExpenses(),
+      balance: await balance()
     }
+    await models.Summaries.create(newSummary);
 
     return newSummary
   }
